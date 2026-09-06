@@ -14,13 +14,13 @@ def mode_selector():
     incomming_ball = TennisGetBool("Ball Incoming")
 
     receiving_serve = CompareBool(CompareBool(play_phase, incomming_ball, "and"), wait_bounce, "and")
-    receiving = CompareBool(CompareBool(play_phase, incomming_ball, "and"), ~wait_bounce, "and")
+    receiving = CompareBool(play_phase, incomming_ball, "and")
     awaiting_hit = CompareBool(play_phase, ~incomming_ball, "and")
 
     return [
         SetVariable("serving", self_serving),
         SetVariable("awaiting_serve", opponent_serving),
         SetVariable("receiving_serve", receiving_serve),
-        SetVariable("recieving", receiving), # possibly divide into lob, flat or charged
+        SetVariable("receiving", receiving), # possibly divide into lob, flat or charged
         SetVariable("awaiting_hit", awaiting_hit) # possibly divide into charged (cannot be returned as charged?) or not charged
     ]

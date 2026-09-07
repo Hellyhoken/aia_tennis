@@ -17,7 +17,7 @@ def receiving_move_controller():
     predicted_bounce = TennisGetVector3("Predicted Bounce")
     ball_velocity = squash_y_axis(TennisGetVector3("Ball Velocity"))
 
-    pre_bounce = predicted_bounce + ball_velocity * 0.2 # make this calculate the distance where the ball will be back to racket height (will require estimating ball velocity loss)
+    pre_bounce = predicted_bounce + ball_velocity * 0.05 # make this calculate the distance where the ball will be back to racket height (will require estimating ball velocity loss)
 
     must_wait = TennisGetBool("Must Wait For Bounce")
     has_bounced = TennisGetBool("Ball Has Bounced")
@@ -52,7 +52,17 @@ def serving_move_controller():
     return TennisGetVector3("Serve Stance")
 
 def high_ball_check(target_offset, norm_vel, ball_position, player_position):
+    has_bounced = TennisGetBool("Ball Has Bounced")
+
     orig = ball_position + norm_vel * target_offset
+    pred_bounce = TennisGetVector3("Predicted Bounce")
+
+    bb_dist = squash_y_axis(ball_position-pred_bounce)
+    orig_clamp = ConditionalSetVector3(
+        CompareFloats(bb_dist, target_offset, "<"),
+        pred_bounce,
+        orig
+    )
 
     l11 = GetVariable("height_limit1_start")
     l12 = GetVariable("height_limit1_end")
@@ -75,13 +85,11 @@ def high_ball_check(target_offset, norm_vel, ball_position, player_position):
             ball_position,
             player_position
         ),
-        orig
+        orig_clamp
     )
 
     l21 = GetVariable("height_limit2_start")
     l22 = GetVariable("height_limit2_end")
-
-    has_bounced = TennisGetBool("Ball Has Bounced")
 
     if21 = CompareFloats(target_offset, l21, ">")
     if22 = CompareFloats(target_offset, l22, "<")

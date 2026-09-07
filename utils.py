@@ -61,3 +61,64 @@ def racket_offset_plotting():
         0.5,
         "Blonde"
     )
+
+def max_float(nodes):
+    max_value = nodes[0]
+    for node in nodes:
+        max_value = ConditionalSetFloat(
+            node > max_value,
+            node,
+            max_value
+        )
+    return max_value
+
+def max_vector3(vectors, float_keys):
+    max_vector = vectors[0]
+    max_float = float_keys[0]
+    for i in range(1, len(vectors)):
+        max_vector = ConditionalSetVector3(
+            float_keys[i] > max_float,
+            vectors[i],
+            max_vector
+        )
+        max_float = ConditionalSetFloat(
+            float_keys[i] > max_float,
+            float_keys[i],
+            max_float
+        )
+    return max_vector
+
+def min_float(nodes):
+    min_value = nodes[0]
+    for node in nodes:
+        min_value = ConditionalSetFloat(
+            node < min_value,
+            node,
+            min_value
+        )
+    return min_value
+
+def min_vector3(vectors, float_keys):
+    min_vector = vectors[0]
+    min_float = float_keys[0]
+    for i in range(1, len(vectors)):
+        min_vector = ConditionalSetVector3(
+            float_keys[i] < min_float,
+            vectors[i],
+            min_vector
+        )
+        min_float = ConditionalSetFloat(
+            float_keys[i] < min_float,
+            float_keys[i],
+            min_float
+        )
+    return min_vector
+
+def plot_trajectory(trajectory, color="Black"):
+    for i in range(len(trajectory)-1):
+        _ = DebugDrawLine(
+            trajectory[i],
+            trajectory[i+1],
+            0.5,
+            color
+        )

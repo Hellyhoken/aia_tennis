@@ -1,4 +1,5 @@
 AIGamePyLibrary/
 __pycache__
 .venv/
+.wenv/
 bots/

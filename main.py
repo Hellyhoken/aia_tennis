@@ -6,7 +6,10 @@ from AIGamePyLibrary.AIGamePyLibrary import *
 from controllers import *
 from kast_parabel import kast_parabel
 from mode_selector import mode_selector
+from trajectory_predicter import get_ball_trajectory
 from utils import (
+    max_vector3,
+    plot_trajectory,
     squash_axes,
     racket_offset,
     plot_bool,
@@ -37,7 +40,7 @@ if __name__ == "__main__":
 
     # Util variables
     r_offset = racket_offset()
-    kast_parabel()
+    #kast_parabel()
     racket_offset_plotting()
 
     # Mode selection
@@ -49,6 +52,12 @@ if __name__ == "__main__":
     swining = swing_controller()
     shooting = shot_controller()
     sprinting = sprint_controller()
+
+    ball_trajectory, scores = get_ball_trajectory()
+    max_intercept = max_vector3(ball_trajectory, scores)
+    SetVariable("interception_point", max_intercept)
+    plot_trajectory(ball_trajectory)
+    _ = DebugDrawDisc(max_intercept, 0.5, 0.5, "Red")
 
     # Control variables
     move_var = GetVariable("move")

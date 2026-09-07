@@ -11,8 +11,8 @@ def get_corners():
 
     
     is_home = TennisGetBool("Is Home")
-    return [ConditionalSetVector3(is_home,Vector3(1.5,0,4.5),Vector3(-1.5,0,-4.5)),
-     ConditionalSetVector3(is_home,Vector3(1.5,0,-4.5),Vector3(-1.5,0,4.5)),
+    return [ConditionalSetVector3(is_home,Vector3(1.5,0,4),Vector3(-1.5,0,-4)),
+     ConditionalSetVector3(is_home,Vector3(1.5,0,-4),Vector3(-1.5,0,4)),
      ConditionalSetVector3(is_home,Vector3(12.5,0,3.5),Vector3(-12.5,0,-3.5)),
      ConditionalSetVector3(is_home,Vector3(12.5,0,-3.5),Vector3(-12.5,0,3.5)),
      ]
@@ -75,7 +75,16 @@ def aim_away_controller():
 
     SetVariable("corner_to_hit",hit_corner)
 
+    is_home = TennisGetBool("Is Home")
 
+    _,_,z_pos = Vector3Split(RelativePosition(TennisGetTransform("Self"),"Self"))
+    z_pos = ConditionalSetFloat(is_home,z_pos,MultiplyFloats(z_pos,-1))
+
+
+
+    hit_corner = ConditionalSetVector3(CompareBool(hit_corner == 0,z_pos>3.5,"and"),corners[1],hit_corner)
+    hit_corner = ConditionalSetVector3(CompareBool(hit_corner == 1,z_pos<-3.5,"and"),corners[0],hit_corner)
+    
 
   
     debug = DebugDrawDisc(hit_corner, 0.5, 0.5, "Green")

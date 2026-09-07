@@ -14,7 +14,9 @@ from aim_controllers import (
     old_aim_controller,
     aim_away_controller
 )
-
+from sprint_controllers import (
+    sprint_info
+)
 def move_controller():
     awaiting_hit_move = ConditionalSetVector3(
         GetVariable("awaiting_hit"),
@@ -65,9 +67,11 @@ def shot_controller():
     shot = TennisGetFloat("Shot: Flat")
     shot = ConditionalSetFloat(GetVariable("hitting_corner") == 2,TennisGetFloat("Shot: Curve Right"),shot)
     shot = ConditionalSetFloat(GetVariable("hitting_corner") == 3,TennisGetFloat("Shot: Curve Left"),shot)
+    
 
     return SetVariable("shot", shot)
 
 def sprint_controller():
-    sprint_bool = False
-    return SetVariable("sprint", sprint_bool)
+    should_sprint,give_up = sprint_info()
+    SetVariable("give_up",give_up)
+    return SetVariable("sprint", should_sprint)

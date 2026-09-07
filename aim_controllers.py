@@ -8,8 +8,6 @@ from AIGamePyLibrary.AIGamePyLibrary import *
 #14,0,-6
 
 def get_corners():
-
-    
     is_home = TennisGetBool("Is Home")
     return [ConditionalSetVector3(is_home,Vector3(1.5,0,4),Vector3(-1.5,0,-4)),
      ConditionalSetVector3(is_home,Vector3(1.5,0,-4),Vector3(-1.5,0,4)),
@@ -59,20 +57,21 @@ def aim_away_controller():
 
     hit_corner = ConditionalSetVector3(Distances[0]>max_dist,corners[0],hit_corner)
     max_dist = ConditionalSetFloat(Distances[0]>max_dist,Distances[0],max_dist)
-    SetVariable("hitting_corner",0)
+    corner_number = 0
 
     hit_corner = ConditionalSetVector3(Distances[1]>max_dist,corners[1],hit_corner)
     max_dist = ConditionalSetFloat(Distances[1]>max_dist,Distances[1],max_dist)
-    SetVariable("hitting_corner",1)
+    corner_number = ConditionalSetVector3(Distances[1]>max_dist,1,corner_number)
 
     hit_corner = ConditionalSetVector3(Distances[2]>max_dist,corners[2],hit_corner)
     max_dist = ConditionalSetFloat(Distances[2]>max_dist,Distances[2],max_dist)
-    SetVariable("hitting_corner",2)
+    corner_number = ConditionalSetVector3(Distances[1]>max_dist,2,corner_number)
 
     hit_corner = ConditionalSetVector3(Distances[3]>max_dist,corners[3],hit_corner)
     max_dist = ConditionalSetFloat(Distances[3]>max_dist,Distances[3],max_dist)
-    SetVariable("hitting_corner",3)
+    corner_number = ConditionalSetVector3(Distances[1]>max_dist,3,corner_number)
 
+    SetVariable("hitting_corner", corner_number)
     SetVariable("corner_to_hit",hit_corner)
 
     is_home = TennisGetBool("Is Home")

@@ -4,8 +4,9 @@ import os
 from AIGamePyLibrary.AIGamePyLibrary import *
 
 from controllers import *
+from kast_parabel import kast_parabel
 from mode_selector import mode_selector
-from utils import racket_offset
+from utils import racket_offset, plot_bool
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -31,6 +32,7 @@ if __name__ == "__main__":
 
     # Util variables
     r_offset = racket_offset()
+    kast_parabel()
 
     # Mode selection
     modes = mode_selector()
@@ -55,7 +57,7 @@ if __name__ == "__main__":
     auto_move = TennisAutoMove(move_var, aim_var)
     controller = TennisController(auto_move, swing_var, shot_var, sprint_var)
 
-    i = 1
+    i = 0
     while True:
         save_path = f"bots/hh_botv{args.version_number}.{i}.txt"
         if os.path.isfile(save_path):

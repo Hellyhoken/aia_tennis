@@ -10,6 +10,10 @@ from swing_controllers import (
     serving_swing_controller,
     receiving_swing_controller
 )
+from aim_controllers import (
+    old_aim_controller,
+    aim_away_controller
+)
 
 def move_controller():
     awaiting_hit_move = ConditionalSetVector3(
@@ -39,12 +43,10 @@ def move_controller():
     return SetVariable("move", serving_move)
 
 def aim_controller():
-    offset = Vector3(0,0.5,0)
-    target = TennisGetVector3("Legal Serve Target")
-    debug = DebugDrawDisc(target+offset, 0.5, 0.5, "Green")
-    aim_target = TennisAutoAim(target)
-    aim_debug = DebugDrawDisc(aim_target+offset, 0.5, 0.5, "Blue")
-    return SetVariable("aim", aim_target)
+    aim_target=ConditionalSetVector3(GetVariable("serving"),old_aim_controller(),aim_away_controller())
+     
+  
+    SetVariable("aim",aim_target )
 
 def swing_controller():
     serving_swing = ConditionalSetBool(
@@ -60,8 +62,11 @@ def swing_controller():
     return SetVariable("swing", receiving_swing)
 
 def shot_controller():
-    shot_float = TennisGetFloat("Shot: Flat")
-    return SetVariable("shot", shot_float)
+    shot = TennisGetFloat("Shot: Flat")
+    shot = ConditionalSetFloat(GetVariable("hitting_corner") == 2,TennisGetFloat("Shot: Curve Right"),shot)
+    shot = ConditionalSetFloat(GetVariable("hitting_corner") == 3,TennisGetFloat("Shot: Curve Left"),shot)
+
+    return SetVariable("shot", shot)
 
 def sprint_controller():
     sprint_bool = False

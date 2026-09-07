@@ -5,13 +5,23 @@ from utils import squash_y_axis
 def awaiting_hit_move_controller():
     center_half = TennisGetVector3("Center Of Half")
     center_back = TennisGetVector3("Center Of Back")
-
     b2h_vec = center_half-center_back
 
-    # Possibly implement opponent average scoring location to cover it more
-    # Or experiment with Estimated Opponent Shot Location (might need to aim wrong before hitting to confuse opponents)
+    opponent_pos = RelativePosition(TennisGetTransform("Opponent"), "Self")
+    opponent_x, _, opponent_z = Vector3Split(opponent_pos)
 
-    return center_back + 0.5 * b2h_vec
+    opponent_far = Abs(opponent_x) > 12
+    opponent_close = Abs(opponent_x) < 5
+
+    return ConditionalSetVector3(
+        opponent_far,
+        center_back + b2h_vec * 1.95 + Vector3(0,0,opponent_z*0.4),
+        ConditionalSetVector3(
+            opponent_close,
+            center_back + b2h_vec * 1.9 + Vector3(0,0,opponent_z*0.9),
+            center_back + b2h_vec * 0.6 + Vector3(0,0,opponent_z*0.2)
+        )
+    )
 
 def receiving_move_controller():
     predicted_bounce = TennisGetVector3("Predicted Bounce")
@@ -57,7 +67,7 @@ def high_ball_check(target_offset, norm_vel, ball_position, player_position):
     orig = ball_position + norm_vel * target_offset
     pred_bounce = TennisGetVector3("Predicted Bounce")
 
-    bb_dist = squash_y_axis(ball_position-pred_bounce)
+    bb_dist = Magnitude(squash_y_axis(ball_position-pred_bounce))
     orig_clamp = ConditionalSetVector3(
         CompareFloats(bb_dist, target_offset, "<"),
         pred_bounce,

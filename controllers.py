@@ -25,7 +25,7 @@ def move_controller():
     )
 
     receiving_move = ConditionalSetVector3(
-        GetVariable("receiving"),
+        CompareBool(GetVariable("receiving"), Not(GetVariable("ball_out"))),
         receiving_move_controller(),
         awaiting_hit_move
     )
@@ -54,14 +54,9 @@ def swing_controller():
     serving_swing = ConditionalSetBool(
         GetVariable("serving"),
         serving_swing_controller(),
-        False
+        receiving_swing_controller()
     )
-    receiving_swing = ConditionalSetBool(
-        GetVariable("receiving"),
-        receiving_swing_controller(),
-        serving_swing
-    )
-    return SetVariable("swing", receiving_swing)
+    return SetVariable("swing", serving_swing)
 
 def shot_controller():
     shot = TennisGetFloat("Shot: Flat")
@@ -73,5 +68,14 @@ def shot_controller():
 
 def sprint_controller():
     should_sprint,give_up = sprint_info()
-    SetVariable("give_up",give_up)
+
+    ball_incoming = TennisGetBool("Ball Incoming")
+    has_bounced = TennisGetBool("Ball Has Bounced")
+    predicted_bounce = TennisGetVector3("Predicted Bounce")
+    pred_x, _, pred_z = Vector3Split(predicted_bounce)
+
+    ball_out = CompareBool(ball_incoming, CompareBool(~has_bounced, CompareBool(Abs(pred_z) > 6, Abs(pred_x) > 14, "or")))
+
+    SetVariable("ball_out", ball_out)
+    SetVariable("give_up",CompareBool(give_up, ball_out, "or"))
     return SetVariable("sprint", should_sprint)

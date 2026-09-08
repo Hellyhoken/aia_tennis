@@ -1,6 +1,9 @@
 from AIGamePyLibrary.AIGamePyLibrary import *
 
-from utils import squash_y_axis
+from score_targets import SHOT_TYPE
+from trajectory_predicter import INTERCEPT_TIME
+from utils import plot_bool, squash_y_axis
+
 
 def serving_swing_controller():
     charge_pct = TennisGetFloat("Self Swing Charge Pct")
@@ -16,15 +19,8 @@ def receiving_swing_controller():
         1
     )
 
-    move_target = GetVariable("move")
     ball_position = TennisGetVector3("Ball Position")
     ball_velocity = TennisGetVector3("Ball Velocity")
-
-    horizontal_dist = Magnitude(squash_y_axis(SubtractVector3(move_target, ball_position)))
-    horizontal_vel = Magnitude(squash_y_axis(ball_velocity))
-
-    arrival_time = horizontal_dist / horizontal_vel
-    at_var = SetVariable("ball_target_arrival_time", arrival_time)
     
     player_trans = TennisGetTransform("Self")
     player_pos = RelativePosition(player_trans, "Self")
@@ -32,7 +28,7 @@ def receiving_swing_controller():
     next_step_ball_pos = ball_position + ball_velocity * 0.065 # 0.019 timestep (0.065 to account for swing delay)
 
     next_player_distance = Distance(player_pos, next_step_ball_pos)
-    in_range = next_player_distance < 4
+    in_range = next_player_distance < 3
 
     racket_x_offset = 0.55 * side_constant
 
@@ -48,12 +44,7 @@ def receiving_swing_controller():
 
     x_dist = (racket_x - next_ball_x) * side_constant
 
-    charge_pct = TennisGetFloat("Self Swing Charge Pct")
-    should_charge = CompareBool(
-        arrival_time < 1,
-        charge_pct > 0,
-        "or"
-    )
+    auto_swing, _ = TennisAutoSwing(SHOT_TYPE, "Prefer Charge")
     should_hit = CompareBool(
         CompareBool(
             in_range,
@@ -67,4 +58,12 @@ def receiving_swing_controller():
         "or"
     )
 
-    return CompareBool(should_charge, ~should_hit, "and")
+    plot_bool(auto_swing, "Auto Swing", "Red")
+
+    plot_bool(in_range, "In Range", "Green")
+    plot_bool(racket1_dist <= 1.05, "Racket 1 In Range", "Blue")
+    plot_bool(racket2_dist <= 1.05, "Racket 2 In Range", "Blue")
+    plot_bool(x_dist < -1.85, "X Dist < -1.85", "Purple")
+    plot_bool(should_hit, "Should Hit", "Blue")
+
+    return CompareBool(auto_swing, ~should_hit, "and")

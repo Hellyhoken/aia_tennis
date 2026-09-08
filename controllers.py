@@ -1,8 +1,11 @@
 from AIGamePyLibrary.AIGamePyLibrary import *
 
+from mode_selector import BALL_INCOMING, SERVING, AWAITING_SERVE, RECEIVING, AWAITING_HIT, BALL_OUT
+from params import SERVE_SIDE_FLOAT, SIDE_FLOAT
+from score_targets import AIM_TARGET, SHOT_TYPE
+from trajectory_predicter import INTERCEPT_POINT, INTERCEPT_TIME
 from move_controllers import (
     awaiting_hit_move_controller,
-    receiving_move_controller,
     awaiting_serve_move_controller,
     serving_move_controller
 )
@@ -10,72 +13,75 @@ from swing_controllers import (
     serving_swing_controller,
     receiving_swing_controller
 )
-from aim_controllers import (
-    old_aim_controller,
-    aim_away_controller
-)
-from sprint_controllers import (
-    sprint_info
-)
+from aim_controllers import serve_aim_controller
+from utils import plot_bool, squash_y_axis
 def move_controller():
     awaiting_hit_move = ConditionalSetVector3(
-        GetVariable("awaiting_hit"),
+        AWAITING_HIT,
         awaiting_hit_move_controller(),
         TennisGetVector3("Center Of Half")
     )
 
     receiving_move = ConditionalSetVector3(
-        CompareBool(GetVariable("receiving"), Not(GetVariable("ball_out"))),
-        receiving_move_controller(),
+        CompareBool(RECEIVING, Not(BALL_OUT)),
+        INTERCEPT_POINT,
         awaiting_hit_move
     )
 
     awaiting_serve_move = ConditionalSetVector3(
-        GetVariable("awaiting_serve"),
+        AWAITING_SERVE,
         awaiting_serve_move_controller(),
         receiving_move
     )
 
     serving_move = ConditionalSetVector3(
-        GetVariable("serving"),
+        SERVING,
         serving_move_controller(),
         awaiting_serve_move
     )
 
-    return SetVariable("move", serving_move)
+    return serving_move
 
 def aim_controller():
-    aim_target=ConditionalSetVector3(GetVariable("serving"),old_aim_controller(),aim_away_controller())
-     
-  
-    SetVariable("aim",aim_target )
+    aim_target = ConditionalSetVector3(
+        SERVING,
+        serve_aim_controller(),
+        AIM_TARGET
+    )
+
+    return aim_target
 
 def swing_controller():
     serving_swing = ConditionalSetBool(
-        GetVariable("serving"),
+        SERVING,
         serving_swing_controller(),
         receiving_swing_controller()
     )
-    return SetVariable("swing", serving_swing)
+    return serving_swing
 
 def shot_controller():
-    shot = TennisGetFloat("Shot: Flat")
-    shot = ConditionalSetFloat(GetVariable("hitting_corner") == 2,TennisGetFloat("Shot: Curve Right"),shot)
-    shot = ConditionalSetFloat(GetVariable("hitting_corner") == 3,TennisGetFloat("Shot: Curve Left"),shot)
-    
-
-    return SetVariable("shot", shot)
+    serve_shot = ConditionalSetFloat(
+        (SERVE_SIDE_FLOAT * SIDE_FLOAT) > 0.0,
+        TennisGetFloat("Shot: Curve Left"),
+        TennisGetFloat("Shot: Curve Right")
+    )
+    return ConditionalSetFloat(
+        SERVING,
+        serve_shot,
+        SHOT_TYPE
+    )
 
 def sprint_controller():
-    should_sprint,give_up = sprint_info()
+    move_target = move_controller()
+    player_position = RelativePosition(TennisGetTransform("Self"), "Self")
 
-    ball_incoming = TennisGetBool("Ball Incoming")
-    has_bounced = TennisGetBool("Ball Has Bounced")
-    predicted_bounce = TennisGetVector3("Predicted Bounce")
-    pred_x, _, pred_z = Vector3Split(predicted_bounce)
+    player_distance_to_target = Magnitude(
+        squash_y_axis(SubtractVector3(move_target, player_position))
+    )
 
-    ball_out = CompareBool(ball_incoming, CompareBool(~has_bounced, CompareBool(Abs(pred_z) > 6, Abs(pred_x) > 14, "or")))
+    needed_speed = DivideFloats(player_distance_to_target, INTERCEPT_TIME)
 
-    SetVariable("ball_out", ball_out)
-    SetVariable("give_up",CompareBool(give_up, ball_out, "or"))
-    return SetVariable("sprint", should_sprint)
+    sprint = CompareBool(BALL_INCOMING, CompareBool(needed_speed > 7, needed_speed <= 13.7))
+    give_up = needed_speed > 13.7
+
+    return sprint, give_up

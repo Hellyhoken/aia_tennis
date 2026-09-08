@@ -4,17 +4,8 @@ import os
 from AIGamePyLibrary.AIGamePyLibrary import *
 
 from controllers import *
-from kast_parabel import kast_parabel
-from mode_selector import mode_selector
-from trajectory_predicter import get_ball_trajectory
-from utils import (
-    max_vector3,
-    plot_trajectory,
-    squash_axes,
-    racket_offset,
-    plot_bool,
-    racket_offset_plotting
-)
+from params import SIDE_FLOAT
+from utils import plot_bool
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -38,43 +29,23 @@ if __name__ == "__main__":
         facial_hair=0
     )
 
-    # Util variables
-    r_offset = racket_offset()
-    #kast_parabel()
-    racket_offset_plotting()
-
-    # Mode selection
-    modes = mode_selector()
-
     # Controls
     moving = move_controller()
     aiming = aim_controller()
     swining = swing_controller()
     shooting = shot_controller()
-    sprinting = sprint_controller()
+    sprinting, give_up = sprint_controller()
 
-    ball_trajectory, scores = get_ball_trajectory()
-    max_intercept = max_vector3(ball_trajectory, scores)
-    SetVariable("interception_point", max_intercept)
-    plot_trajectory(ball_trajectory)
-    _ = DebugDrawDisc(max_intercept, 0.5, 0.5, "Red")
+    sprint_bool = CompareBool(sprinting, Not(give_up))
 
-    # Control variables
-    move_var = GetVariable("move")
-    aim_var = GetVariable("aim")
-    swing_var = GetVariable("swing")
-    shot_var = GetVariable("shot")
-    sprint_var = GetVariable("sprint")
-    give_up_var = GetVariable("give_up")
+    racket_x_vec = Vector3(0.55, 0, 0) * SIDE_FLOAT
+    move_target = SubtractVector3(moving, racket_x_vec*0.6)
 
-    sprint_bool = CompareBool(sprint_var, Not(give_up_var))
-
-    racket_x_vec = squash_axes(GetVariable("racket_offset"),False,True,True)
-    move_target = SubtractVector3(move_var, racket_x_vec*0.6)
+    _ = plot_bool(swining, "Swinging", "Yellow")
 
     # Controller
-    auto_move = TennisAutoMove(move_target, aim_var)
-    controller = TennisController(auto_move, swing_var, shot_var, sprint_bool)
+    auto_move = TennisAutoMove(move_target, aiming)
+    controller = TennisController(auto_move, swining, shooting, sprint_bool)
 
     i = 0
     while True:
@@ -83,5 +54,5 @@ if __name__ == "__main__":
             i += 1
             continue
         else:
-            SaveData(save_path, "auto")
+            SaveData(save_path, "single")
             break

@@ -3,66 +3,7 @@ import json
 import numpy as np
 
 from AIGamePyLibrary.AIGamePyLibrary import *
-from targets import SIDE_FLOAT
-
-SHOT_TYPES = [
-    "Flat",
-    "Slice",
-    "Topspin",
-    "Lob",
-    "Drop",
-    "Right",
-    "Left"
-]
-
-CURVES = {
-    "Right",
-    "Left"
-}
-
-NEED_SIDE_FLOAT = {
-    "Right",
-    "Left",
-    "Slice",
-    "Lob",
-    "Drop"
-}
-
-SHOT_PARAMS = {
-    "Flat": {"vy_k": -0.78, "vy_m": 0.33, "vx_k": 0.94, "vz_k": 0.94, "vz_m": 0.0, "ax": 0.0, "ay": -28.0, "az": 0.0},
-    "Slice": {"vy_k": -0.63, "vy_m": 0.34, "vx_k": 0.9, "vz_k": 0.9, "vz_m": 0.0, "ax": -1.0, "ay": -28.0, "az": 0.0},
-    "Topspin": {"vy_k": -1.10, "vy_m": 0.6, "vx_k": 1.13, "vz_k": 1.13, "vz_m": 0.0, "ax": 0.0, "ay": -28.0, "az": 0.0},
-    "Lob": {"vy_k": -0.78, "vy_m": 0.33, "vx_k": 0.94, "vz_k": 0.94, "vz_m": 0.0, "ax": -0.45, "ay": -28.0, "az": 0.0},
-    "Drop": {"vy_k": -0.34, "vy_m": 6.16, "vx_k": 0.4, "vz_k": 0.4, "vz_m": 0.0, "ax": -0.45, "ay": -28.0, "az": 0.0},
-    "Right": {"vy_k": -0.78, "vy_m": 0.25, "vx_k": 0.94, "vz_k": 0.94, "vz_m": -0.18, "ax": 0.0, "ay": -28.0, "az": -16.0},
-    "Left": {"vy_k": -0.78, "vy_m": 0.25, "vx_k": 0.94, "vz_k": 0.94, "vz_m": 0.18, "ax": 0.0, "ay": -28.0, "az": 16.0}
-}
-
-def apply_side_float(params, side_float):
-    params["vz_m"] = params["vz_m"] * side_float
-    params["ax"] = params["ax"] * side_float
-    params["az"] = params["az"] * side_float
-
-    return params
-
-def shot_params_getter(is_self, shot_type):
-    side_float = ConditionalSetFloat(
-        is_self,
-        SIDE_FLOAT,
-        -SIDE_FLOAT
-    )
-    shot_params = SHOT_PARAMS["Flat"]
-    for shot in SHOT_TYPES:
-        ts_params = apply_side_float(SHOT_PARAMS[shot], side_float) if shot in NEED_SIDE_FLOAT else SHOT_PARAMS[shot]
-        is_shot = shot_type == TennisGetFloat(f"Shot: Curve {shot}" if shot in CURVES else f"Shot: {shot}")
-        for param in ts_params:
-            shot_params[param] = ConditionalSetFloat(
-                is_shot,
-                ts_params[param],
-                shot_params[param]
-            )
-
-    return shot_params        
+from params import SHOT_TYPES     
 
 def get_pre_bounce_trajectories(series):
     pre_bounce_trajs = []
@@ -118,7 +59,7 @@ def least_squares(x, y):
 def get_bounce_params(debug=False, plot=False):
     bounce_params = {}
     for shot_type in SHOT_TYPES:
-        file_path = f"bounce_recordings/{shot_type}.json"
+        file_path = f"bounce_recordings/{shot_type.lower()}.json"
         with open(file_path, "r") as f:
             string = f.readlines()
         string = "".join(string)
@@ -164,7 +105,7 @@ def get_bounce_params(debug=False, plot=False):
 def get_shot_params(debug=False):
     shot_params = {}
     for shot_type in SHOT_TYPES:
-        file_path = f"bounce_recordings/{shot_type}.json"
+        file_path = f"bounce_recordings/{shot_type.lower()}.json"
         with open(file_path, "r") as f:
             string = f.readlines()
         string = "".join(string)
@@ -188,7 +129,27 @@ def get_shot_params(debug=False):
         print(json.dumps(shot_params, indent=4))
     return shot_params
 
+def get_shot_speed(debug=False):
+    shot_speeds = {}
+    for shot_type in SHOT_TYPES:
+        file_path = f"bounce_recordings/{shot_type.lower()}.json"
+        with open(file_path, "r") as f:
+            string = f.readlines()
+        string = "".join(string)
+        for i in range(10):
+            string = string.replace(f",{i}",f".{i}")
+        data = json.loads(string)
+        series = {entry["name"]: entry["y"] for entry in data["series"]}
+        horizontal_velocities = np.array([np.linalg.norm([vx, vz]) for vx, vz in zip(series["vx"], series["vz"])])
+        mask = horizontal_velocities > 0
+        shot_speeds[shot_type] = np.mean(horizontal_velocities[mask])
+    if debug:
+        print(json.dumps(shot_speeds, indent=4))
+    return shot_speeds
+
+
 if __name__ == "__main__":
     get_bounce_params(debug=True, plot=True)
     get_shot_params(debug=True)
+    get_shot_speed(debug=True)
     input("Press Enter to exit...")

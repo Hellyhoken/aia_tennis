@@ -1,26 +1,24 @@
 from AIGamePyLibrary.AIGamePyLibrary import *
 
-def mode_selector():
-    serve_phase = TennisGetBool("Is Serve Phase")
-    play_phase = ~serve_phase
+SERVE_PHASE = TennisGetBool("Is Serve Phase")
+PLAY_PHASE = ~SERVE_PHASE
 
-    self_server = TennisGetBool("Is Self Server For Set")
-    opponent_server = TennisGetBool("Is Opponent Server For Set")
+SELF_SERVER = TennisGetBool("Is Self Server For Set")
+OPPONENT_SERVER = TennisGetBool("Is Opponent Server For Set")
 
-    self_serving = CompareBool(serve_phase, self_server, "and")
-    opponent_serving = CompareBool(serve_phase, opponent_server, "and")
+SERVING = CompareBool(SERVE_PHASE, SELF_SERVER, "and")
+AWAITING_SERVE = CompareBool(SERVE_PHASE, OPPONENT_SERVER, "and")
 
-    wait_bounce = TennisGetBool("Must Wait For Bounce")
-    incomming_ball = TennisGetBool("Ball Incoming")
+BALL_INCOMING = TennisGetBool("Ball Incoming")
 
-    receiving_serve = CompareBool(CompareBool(play_phase, incomming_ball, "and"), wait_bounce, "and")
-    receiving = CompareBool(play_phase, incomming_ball, "and")
-    awaiting_hit = CompareBool(play_phase, ~incomming_ball, "and")
+RECEIVING = CompareBool(PLAY_PHASE, BALL_INCOMING, "and")
+AWAITING_HIT = CompareBool(PLAY_PHASE, ~BALL_INCOMING, "and")
 
-    return [
-        SetVariable("serving", self_serving),
-        SetVariable("awaiting_serve", opponent_serving),
-        SetVariable("receiving_serve", receiving_serve),
-        SetVariable("receiving", receiving), # possibly divide into lob, flat or charged
-        SetVariable("awaiting_hit", awaiting_hit) # possibly divide into charged (cannot be returned as charged?) or not charged
-    ]
+HAS_BOUNCED = TennisGetBool("Ball Has Bounced")
+PREDICTED_BOUNCE = TennisGetVector3("Predicted Bounce")
+
+def ball_out():
+    pred_x, _, pred_z = Vector3Split(PREDICTED_BOUNCE)
+    return CompareBool(BALL_INCOMING, CompareBool(~HAS_BOUNCED, CompareBool(Abs(pred_z) > 6.1, Abs(pred_x) > 14.1, "or")))
+
+BALL_OUT = ball_out()
